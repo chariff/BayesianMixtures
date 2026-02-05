@@ -8,9 +8,9 @@ def read_me():
 
 
 setup(
-    name='InfiniteSkewtMixtures',
-    version='1.0.0',
-    url='https://github.com/chariff/BayesianInfiniteMixtures',
+    name='DirichletProcessMixtureModels',
+    version='1.0.1',
+    url='https://github.com/chariff/DirichletProcessMixtureModels',
     packages=find_packages(),
     author='Chariff Alkhassim',
     author_email='chariff.alkhassim@gmail.com',
@@ -19,8 +19,8 @@ setup(
     long_description_content_type="text/markdown",
     include_package_data=True,
     install_requires=[
-        "numpy >= 1.18.5+mkl",
-        "scipy >= 1.4.1+mkl",
+        "numpy >= 1.18.5",
+        "scipy >= 1.4.1",
         "scikit-learn >= 0.24.1"
     ],
     license='MIT',
