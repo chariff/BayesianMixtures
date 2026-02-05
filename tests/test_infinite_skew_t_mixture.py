@@ -1,8 +1,8 @@
 import pytest
 import mock
 
-from InfiniteSkewtMixtures.bayesian_skew_t_mixture import BayesianSkewtMixture
-from InfiniteSkewtMixtures.multivariate_skew_t import multivariate_skew_t as rv
+from BayesianMixtures.bayesian_skew_t_mixture import BayesianSkewtMixture
+from BayesianMixtures.multivariate_skew_t import multivariate_skew_t as rv
 import numpy as np
 
 # skewt mixture number of observations and dimensions

@@ -22,12 +22,12 @@ Installation.
 
 * From GitHub:
 
-      pip install git+https://github.com/chariff/InfiniteSkewtMixtures.git
+      pip install git+https://github.com/chariff/DirichletProcessMixtureModels.git
 
 ### Dependencies
 GPro requires:
 * Python (>= 3.5)
-* NumPy+mkl (>= 1.18.5)
+* NumPy (>= 1.18.5)
 * SciPy (>= 1.4.1)
 * sklearn (>= 0.23.2)
 
