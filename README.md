@@ -1,19 +1,17 @@
 
 
-# Bayesian Infinite Skew-t Mixtures.
+# Bayesian Mixture Models.
 
 
-[![Build Status](https://travis-ci.org/chariff/InfiniteSkewtMixtures.svg?branch=master)](https://travis-ci.org/chariff/InfiniteSkewtMixtures)
-[![Codecov](https://codecov.io/github/chariff/InfiniteSkewtMixtures/badge.svg?branch=master&service=github)](https://codecov.io/github/chariff/InfiniteSkewtMixtures?branch=master)
+[![Build Status](https://travis-ci.org/chariff/BayesianMixtures.svg?branch=master)](https://travis-ci.org/chariff/BayesianMixtures)
+[![Codecov](https://codecov.io/github/chariff/BayesianMixtures/badge.svg?branch=master&service=github)](https://codecov.io/github/chariff/BayesianMixtures?branch=master)
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
 
 
-
-Python implementation of a Bayesian nonparametric approach of skew-t distributions to perform model based clustering.   
+Python package to perform Dirichlet process mixture model clustering.  
 The Dirichlet process prior on the mixing distribution allows for an inference of the number of classes directly 
-from  the  data thus avoiding  model selection issues. Skew-t distributions provide robustness to outliers and  
-non-elliptical shape of clusters.  
+from the data thus avoiding model selection issues. Gaussian mixture models or Skew-t mixture models are available. Skew-t distributions provide robustness to outliers and non-elliptical shape of clusters. Theoretically, Gaussian distributions are nested within Skew-t distributions but in practice this increase of flexibility comes at the cost of a more approximate inference. Inference is done using a collapsed gibbs sampling scheme. 
 
 Installation.
 ============
@@ -22,95 +20,61 @@ Installation.
 
 * From GitHub:
 
-      pip install git+https://github.com/chariff/DirichletProcessMixtureModels.git
+      pip install git+https://github.com/chariff/BayesianMixtures.git
 
 ### Dependencies
-GPro requires:
+BayesianMixtures requires:
 * Python (>= 3.5)
 * NumPy (>= 1.18.5)
 * SciPy (>= 1.4.1)
 * sklearn (>= 0.23.2)
 
 
-Brief guide to using Bayesian Infinite Skew-t Mixtures.
+Brief guide to using BayesianMixtures.
 =========================
 
 Checkout the package docstrings for more information.
 
-## 1. Fitting an infinite skew-t mixture model and making predictions.
+## 1. Fitting an infinite Gaussian mixture model and making predictions.
 
 ```python
-from InfiniteSkewtMixtures.bayesian_skew_t_mixture import BayesianSkewtMixture
-from InfiniteSkewtMixtures.multivariate_skew_t import multivariate_skew_t as rv
+from BayesianMixtures.gaussian_mixture import BayesianGaussianMixture
+from sklearn.datasets import make_blobs
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from itertools import cycle
 color_cycle = cycle(plt.rcParams['axes.prop_cycle'].by_key()['color'])
-plt.style.use('seaborn')
+
 ```
-Training data will be simulated from the function below.
-A minimum of two values is required. The following example is 
-a skew-t mixture of 4 components in 2D.
+Simulated data.
+
 ```python
-# skewt mixture number of observations and dimensions
-n_samples = 1000
+
+n_samples = 2500
 n_components = 4
 dim = 2
 
-# skewt mixture parameters
-weights = np.array([.15, .05, .5, .3])
-# locations
-locs = np.array([[-2, 1.5], [1, 1], [1.5, -2], [-2, -2]])
-shapes = np.array([[-.6, .6], [.8, .8], [2, -2], [-.8, -.8]])
-scales = np.tile(np.identity(dim), n_components)
-scales = scales.T.reshape(n_components, dim, dim) / 5
-# degrees of freedom
-dfs = np.array([50, 50, 50, 15])
-
-# function to generate a skew t mixture
-def gen_skewt_mixture(n_samples, n_components, dim, weights,
-                      locs, shapes, scales, dfs, random_state=None):
-    sizes = np.array(n_samples * weights, dtype=int)
-    labels = np.repeat(np.arange(n_components), sizes)
-    sample = np.zeros(shape=(dim, n_samples), dtype=float)
-    prev_size = 0
-    for k in range(n_components):
-        size_k = sizes[k]
-        component = rv.rvs(size_k, locs[k], shapes[k],
-                           scales[k], dfs[k], random_state)
-        sample[:, prev_size : prev_size + size_k] = component
-        prev_size += size_k
-    return sample.T, labels
-    
-# Generate a skew t mixture
-data_samples, labels = gen_skewt_mixture(n_samples, n_components, dim, weights,
-                                         locs, shapes, scales, dfs,
-                                         random_state=2020)
+data_samples, labels = make_blobs(n_samples=n_samples, n_features=2,
+                                  centers=4, cluster_std=1, random_state=0)
 
 ```
-The simulated data, 'data_samples' is an array of shape (n_observations, n_features).
-labels is an array of shape (n_observations, ) and can be used
-to compare the estimated partition.
 
 Select the number maximum number of mcmc (Monte Carlo Markov Chain) iterations.
-Important note : The number of mcmc iterations must be carefully chosen. Theoretically, 
-as the number of iterations increases, the mcmc sample should converge to the target distribution. 
-The more iterations you can afford, the better. A variational algorithm would be faster but at the 
-expense of not having a reliable convergence criteria. 
+ 
 ```python
 # Maximum number of mcmc iterations 
-max_iter = 2000
+max_iter = 1000
 # Burn-in iterations
-burn_in = 1500
+burn_in = 500
 ```
-Instantiate a BayesianSkewtMixture object with default parameters.
+Instantiate a BayesianGaussianMixture object with default parameters.
 ```python
-cls = BayesianSkewtMixture(max_iter=max_iter, burn_in=burn_in,
-                           verbose=2, verbose_interval=500,
-                           random_state=2020, init_params='random')
+cls = BayesianGaussianMixture(max_iter=max_iter, burn_in=burn_in  max_components=100,
+                           verbose=2, verbose_interval=500,  n_components_init=100,
+                           random_state=2026, init_params='kmeans')
 ```
-Fit a Bayesian infinite skew-t mixture model. 
+Perform inference. 
 ```python
 p = cls.fit(data_samples)
 ```
@@ -119,19 +83,31 @@ Maximum a posteriori (MAP) partition.
 map_partition = p.map_partition
 ```
 ```python
-# Scatter plot of the MAP partition
-for label in set(map_partition):
-    plt.scatter(data_samples[map_partition == label, 0],
-                data_samples[map_partition == label, 1], 
-                c=next(color_cycle), alpha=.5, s=20, 
-                label='class ' + str(label))
-plt.title('MAP partition')
-plt.xlabel('feature 1')
-plt.ylabel('feature 2')
-plt.legend(loc='upper right')
-plt.show()
+with plt.style.context('bmh'):
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    ax1, ax2 = axes.ravel()
+    alpha = .4
+    # Scatter plot of the MAP partition
+    for label in set(labels):
+        ax1.scatter(data_samples[labels == label, 0],
+                    data_samples[labels == label, 1], 
+                    c=next(color_cycle), alpha=alpha, zorder=2)
+        
+        ax1.set_title('Actual')
+        ax1.set_xlabel('feature 1')
+        ax1.set_ylabel('feature 2')
+
+    for label in set(map_partition):
+        ax2.scatter(data_samples[map_partition == label, 0],
+                    data_samples[map_partition == label, 1], 
+                    c=next(color_cycle), alpha=alpha, zorder=2)
+        
+        ax2.set_title('MAP partition')
+        ax2.set_xlabel('feature 1')
+        ax2.set_ylabel('feature 2')
+    plt.show()
 ```
-![MAP partition](https://github.com/chariff/BayesianInfiniteMixtures/raw/master/examples/MAP_partition_0.png)
+![MAP partition](https://github.com/chariff/BayesianMixtures/raw/master/examples/MAP_partition_0.png)
 
 Log posterior trace.
 ```python
@@ -141,7 +117,7 @@ plt.xlabel('mcmc iterations')
 plt.ylabel('Log posterior evaluation')
 plt.show()
 ```
-![Log posterior trace](https://github.com/chariff/BayesianInfiniteMixtures/raw/master/examples/trace_0.png)
+![Log posterior trace](https://github.com/chariff/BayesianMixtures/raw/master/examples/trace_0.png)
 
 Predict new values.
 ```python
@@ -149,66 +125,16 @@ Predict new values.
 map_predicted_partition = p.map_predict(data_samples)
 ```
 
-The MAP approach ignores the mcmc partitions sample and clustering uncertainty cannot be assessed.
+Using the MAP approach, clustering uncertainty cannot be assessed.
 In the following section we will show an example of how to use the sampled partitions to assess
-the clustering uncertainty in a case with overlap between two distributions.
-```python
-# skewt mixture number of observations and dimensions
-n_samples = 1000
-n_components = 2
-dim = 2
+the clustering uncertainty.
 
-# skewt mixture parameters
-weights = np.array([.6, .4])
-# locations
-locs = np.array([[1.5, -2], [2, 2]])
-shapes = np.array([[-2, 2], [-.8, -.8]])
-scales = np.tile(np.identity(dim), n_components)
-scales = scales.T.reshape(n_components, dim, dim) / 5
-# degrees of freedom
-dfs = np.array([50, 50])
 
-# Generate a skew t mixture
-data_samples, labels = gen_skewt_mixture(n_samples, n_components, dim, weights,
-                                         locs, shapes, scales, dfs,
-                                         random_state=2020)
-
-```
-```python
-# Maximum number of mcmc iterations 
-max_iter = 2000
-# Burn-in iterations
-burn_in = 1500
-cls = BayesianSkewtMixture(max_iter=max_iter, burn_in=burn_in,
-                           verbose=2, verbose_interval=500,
-                           random_state=2020, init_params='random')
-```
-Fit a Bayesian infinite skew-t mixture model. 
-```python
-p = cls.fit(data_samples)
-```
-
-```python
-for label in set(p.map_partition):
-    plt.scatter(data_samples[p.map_partition == label, 0],
-                data_samples[p.map_partition == label, 1], 
-                c=next(color_cycle), alpha=.5, s=20, 
-                label='class ' + str(label))
-plt.title('Case with overlap')
-plt.xlabel('feature 1')
-plt.ylabel('feature 2')
-plt.legend(loc='upper right')
-plt.show()
-
-```
 MAP partition.
-![MAP partition](https://github.com/chariff/BayesianInfiniteMixtures/raw/master/examples/MAP_partition_overlap_1.png)
+![MAP partition](https://github.com/chariff/BayesianMixtures/raw/master/examples/MAP_partition_overlap_1.png)
 
-The following function enables to calculate an average of the co-clustering
-matrices from the explored partitions in the posterior mcmc draws
-to obtain the posterior co-clustering probabilities.
-It could be parallelised on the partitions but it would still have a quadratic 
-computational cost. 
+The following function is to calculate an average of the co-clustering
+matrices from the sampled partitions to obtain the posterior co-clustering probabilities.
 ```python
 from numba import jit
 
@@ -234,20 +160,25 @@ coclust = coclustering(partitions)
 Heatmap of the posterior co-clustering probabilities.
 ```python
 # Plot co-clustering matrix.
-fig = plt.figure(figsize=(8, 8))
-im = plt.matshow(coclust, aspect='auto', origin='lower', cmap=cm.OrRd)
-plt.colorbar(im)
-plt.title('Average co-clustering matrix')
-plt.xlabel('observations')
-plt.ylabel('observations')
+import seaborn as sns
+g = sns.clustermap(coclust, metric='euclidean', method='average', cmap='viridis', 
+                   col_cluster=True, row_cluster=True,  dendrogram_ratio=0.1, 
+                   xticklabels=False, yticklabels=False, figsize=(7, 7))
+ax = g.ax_heatmap
+ax.set_title("Average co-clustering matrix")
+ax.set_xlabel("Observations")
+ax.set_ylabel("Observations")
+
+g.ax_cbar.set_position((0.01, 0.4, .05, .2))
+g.ax_row_dendrogram.set_visible(False)
+g.ax_col_dendrogram.set_visible(False)
 plt.show()
 ```
-![Co-clustering probabilities](https://github.com/chariff/BayesianInfiniteMixtures/raw/master/examples/avg_coclust.png)
+![Co-clustering probabilities](https://github.com/chariff/BayesianMixtures/raw/master/examples/avg_coclust.png)
 
 To obtain a point estimate of the clustering, one
-could minimizes a loss function of the co-clustering matrices from the 
-explored partitions in the posterior mcmc draws and the 
-posterior co-clustering probabilities.
+could minimize a loss function of the co-clustering matrices from the 
+sampled partitions and the co-clustering probabilities.
 
 ### References:
 * https://academic.oup.com/biostatistics/article/11/2/317/268224
