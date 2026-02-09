@@ -8,9 +8,9 @@ def read_me():
 
 
 setup(
-    name='DirichletProcessMixtureModels',
+    name='BayesianMixtures',
     version='1.0.1',
-    url='https://github.com/chariff/DirichletProcessMixtureModels',
+    url='https://github.com/chariff/BayesianMixtures',
     packages=find_packages(),
     author='Chariff Alkhassim',
     author_email='chariff.alkhassim@gmail.com',
