@@ -51,7 +51,7 @@ Simulated data.
 
 ```python
 
-n_samples = 2500
+n_samples = 3000
 n_components = 4
 dim = 2
 
@@ -78,15 +78,20 @@ Perform inference.
 ```python
 p = cls.fit(data_samples)
 ```
-Maximum a posteriori (MAP) partition.
+Maximum a posteriori (MAP) predicted partition.
 ```python
-map_partition = p.map_partition
+map_predict_partition = p.map_predict(data_samples)
 ```
+Maximum a posteriori (MAP) clustering probabilities.
+```python
+map_probas = p.map_predict_proba(data_samples)
+```
+
 ```python
 with plt.style.context('bmh'):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax1, ax2 = axes.ravel()
-    alpha = .4
+    alpha = .7
     # Scatter plot of the MAP partition
     for label in set(labels):
         ax1.scatter(data_samples[labels == label, 0],
@@ -97,17 +102,21 @@ with plt.style.context('bmh'):
         ax1.set_xlabel('feature 1')
         ax1.set_ylabel('feature 2')
 
-    for label in set(map_partition):
-        ax2.scatter(data_samples[map_partition == label, 0],
-                    data_samples[map_partition == label, 1], 
+    for label in set(map_predict_partition):
+        ax2.scatter(data_samples[map_predict_partition == label, 0],
+                    data_samples[map_predict_partition == label, 1], 
                     c=next(color_cycle), alpha=alpha, zorder=2)
         
-        ax2.set_title('MAP partition')
+        ax2.set_title('Predicted (MAP)')
         ax2.set_xlabel('feature 1')
         ax2.set_ylabel('feature 2')
     plt.show()
 ```
 ![MAP partition](https://github.com/chariff/BayesianMixtures/raw/master/examples/MAP_partition_0.png)
+
+<!-- Note how the variational optimization fails to reach the global optimum. One could try multiple initializations and 
+eventually get the path towards the global optimum but it highlights the unreliable convergence criteria of such
+an approach.  -->
 
 Log posterior trace.
 ```python
@@ -119,18 +128,16 @@ plt.show()
 ```
 ![Log posterior trace](https://github.com/chariff/BayesianMixtures/raw/master/examples/trace_0.png)
 
-Predict new values.
-```python
-# predict data_samples for the sake of example
-map_predicted_partition = p.map_predict(data_samples)
-```
+The sampling trace looks stationnary with low autocorrelation.
+Note that it took ~500 iterations for the Markov chain to reach the target space. 
+One could run parallel chains to test whether they all converge to the same posterior distribution.
 
-Using the MAP approach, clustering uncertainty cannot be assessed.
+
+
 In the following section we will show an example of how to use the sampled partitions to assess
 the clustering uncertainty.
 
-
-The following function is to calculate an average of the co-clustering
+The following function calculates an average of the co-clustering
 matrices from the sampled partitions to obtain the posterior co-clustering probabilities.
 ```python
 from numba import jit
@@ -152,6 +159,7 @@ def coclustering(partitions):
 # explored partitions in the posterior mcmc draws
 partitions = p.partitions
 # compute the average co-clustering matrix
+# BEWARE of your sample size when running this function.
 coclust = coclustering(partitions)
 ```
 Heatmap of the posterior co-clustering probabilities.
@@ -176,6 +184,9 @@ plt.show()
 To obtain a point estimate of the clustering, one
 could minimize a loss function of the co-clustering matrices from the 
 sampled partitions and the co-clustering probabilities.
+
+<!-- ## 2. Fitting an infinite Skew-t mixture model. -->
+
 
 ### References:
 * https://academic.oup.com/biostatistics/article/11/2/317/268224
