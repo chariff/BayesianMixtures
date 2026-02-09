@@ -140,6 +140,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         # Check all the parameters values of the derived class
         self._check_parameters(X)
 
+
     @abstractmethod
     def _check_parameters(self, X):
         """Check initial parameters of the derived class.
@@ -149,6 +150,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         X : array of shape  (n_observations, n_features)
         """
         pass
+
 
     def _initialize_parameters(self, X, random_state):
         """Initialize the model parameters.
@@ -184,6 +186,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
 
         self._initialize(X, labels)
 
+
     def _initialize_fit_storage(self, X, random_state):
         """Initialize storage structures used in the fit method.
 
@@ -206,6 +209,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         self.sampled_parameters = {}
         self.random_state_iter_ = random_state
 
+
     @abstractmethod
     def _initialize(self, X, labels):
         """Initialize the model parameters of the derived class.
@@ -219,6 +223,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         """
         pass
 
+
     @abstractmethod
     def _partition_sampling(self, X):
         """Posterior sampling of a partition.
@@ -229,6 +234,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
 
         """
         pass
+
 
     @abstractmethod
     def _parameters_sampling(self, X):
@@ -241,10 +247,12 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         """
         pass
 
+
     @abstractmethod
     def _sampled_partition(self):
         """A sampled partition from the posterior."""
         pass
+
 
     @abstractmethod
     def _sampled_parameters(self):
@@ -252,10 +260,12 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         for each component of the mixture."""
         pass
 
+
     @abstractmethod
     def _log_posterior_eval(self):
         """Evaluate the log posterior."""
         pass
+
 
     def fit(self, X):
         """Generate samples from the posterior distribution with
@@ -323,10 +333,11 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         self._print_verbose_msg_end(logposterior, 'sampling')
 
         return self
+    
 
     @abstractmethod
     def _map_predict(self, X, map_params, map_labels):
-        """Predict the labels for the data samples in X using trained model.
+        """Predict the labels for the data samples in X using the trained model.
 
         Parameters
         ----------
@@ -345,8 +356,9 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         """
         pass
 
+
     def map_predict(self, X):
-        """Predict the labels for the data samples in X using trained model.
+        """Predict the labels for the data samples in X using the trained model.
 
         Parameters
         ----------
@@ -365,7 +377,54 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         map_params = self.sampled_parameters[map_ind]
         map_labels = self.sampled_partitions[map_ind]
         return self._map_predict(X, map_params, map_labels)
+    
 
+    @abstractmethod
+    def _map_predict_proba(self, X, map_params, map_labels):
+        """Conditional probability of belonging to a cluster given the data samples 
+        in X using the trained model.
+
+        Parameters
+        ----------
+        X : array of shape (n_observations, n_features)
+
+        map_labels : array of shape (n_observations, )
+            MAP partition.
+
+        map_params : dict of size n_components
+            MAP parameters.
+
+        Returns
+        -------
+        labels : array of shape (n_observations, n_features)
+            Conditional cluster probabilities.
+        """
+        pass
+
+
+    def map_predict_proba(self, X):
+        """Conditional probability of belonging to a cluster given the data samples 
+        in X using the trained model.
+
+        Parameters
+        ----------
+        X : array of shape (n_observations, n_features)
+
+        Returns
+        -------
+        labels : array of shape (n_observations, n_features)
+            Conditional cluster probabilities.
+        """
+        if not hasattr(self, "sampled_partitions"):
+            raise AttributeError("Unfitted model.")
+        X = _check_X(X, None, ensure_min_samples=2)
+        n_samplings = self.max_iter - self.burn_in
+        map_ind = np.argmax(self.logposteriors[-n_samplings:])
+        map_params = self.sampled_parameters[map_ind]
+        map_labels = self.sampled_partitions[map_ind]
+        return self._map_predict_proba(X, map_params, map_labels)
+    
+    
     @property
     def partitions(self):
         """Sampled partitions.
@@ -378,6 +437,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         if not hasattr(self, "sampled_partitions"):
             raise AttributeError("Unfitted model.")
         return self.sampled_partitions
+
 
     @property
     def parameters(self):
@@ -393,6 +453,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
             raise AttributeError("Unfitted model.")
         return self.sampled_parameters
 
+
     @property
     def map_partition(self):
         """Maximum a posteriori partition.
@@ -406,6 +467,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         n_samplings = self.max_iter - self.burn_in
         map_ind = np.argmax(self.logposteriors[-n_samplings:])
         return self.sampled_partitions[map_ind]
+
 
     @property
     def map_parameters(self):
@@ -421,6 +483,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
         n_samplings = self.max_iter - self.burn_in
         map_ind = np.argmax(self.logposteriors[-n_samplings:])
         return self.sampled_parameters[map_ind]
+
 
     @property
     def log_posterior_evals(self):
@@ -445,6 +508,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
             raise AttributeError("Unfitted model.")
         return self.logposteriors_evals
 
+
     @property
     def log_posteriors(self):
         """Log posterior evaluation for each iteration
@@ -457,6 +521,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
             raise AttributeError("Unfitted model.")
         return self.logposteriors
 
+
     def _print_verbose_msg_beg(self, case):
         """Print verbose message on beginning case."""
         if self.verbose == 1:
@@ -465,6 +530,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
             print('Begin %s' % case)
             self._init_prev_time = time()
             self._iter_prev_time = self._init_prev_time
+
 
     def _print_verbose_msg_iter_end(self, n_iter, log_posterior, case):
         """Print verbose message on initialization."""
@@ -476,6 +542,7 @@ class GibbsSamplingMixture(metaclass=ABCMeta):
                 print("%s iteration %d\t time lapse %.5fs\t log posterior %.5f" % (
                     case, n_iter, cur_time - self._iter_prev_time, log_posterior))
                 self._iter_prev_time = cur_time
+
 
     def _print_verbose_msg_end(self, log_posterior, case):
         """Print verbose message on the end of iteration."""

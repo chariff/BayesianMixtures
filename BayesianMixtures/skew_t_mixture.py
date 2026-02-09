@@ -1207,9 +1207,9 @@ class BayesianSkewtMixture(GibbsSamplingMixture):
         return {'locs': locs, 'shapes': shapes,
                 'scales': scales, 'degrees_of_freedoms': dfs}
 
-    def _map_predict(self, X, map_params, map_labels):
-        """Predict the labels for the data samples in X using the MAP
-        of the trained model.
+    def _map_predict_proba(self, X, map_params, map_labels):
+        """Conditional probability of belonging to a cluster given the data samples 
+        in X using the trained model.
 
         Parameters
         ----------
@@ -1236,14 +1236,54 @@ class BayesianSkewtMixture(GibbsSamplingMixture):
         n_components = len(map_locs)
         clusters_pdfs = np.zeros(shape=(n_components, n_observations), dtype=float)
         set_map_labels = np.empty(n_components, dtype=int)
+
+        mixing = {k: v / n_observations for k, v in Counter(map_labels).items()}
+
         for i, (key, map_loc) in enumerate(map_locs.items()):
             clusters_pdfs[i, :] = rv.pdf(X, mean=map_loc,
                                          psi=map_shapes[key],
                                          cov=map_scales[key],
                                          df=map_dfs[key],
-                                         allow_singular=self.allow_singular)
+                                         allow_singular=self.allow_singular) * mixing[key]
             set_map_labels[i] = key
-        return set_map_labels[np.argmax(clusters_pdfs, axis=0)]
+        
+        clusters_probas = clusters_pdfs / clusters_pdfs.sum(axis=0)
+
+        return clusters_probas
+    
+    
+    def _map_predict(self, X, map_params, map_labels):
+        """Predict the labels for the data samples in X using the MAP
+        of the trained model.
+
+        Parameters
+        ----------
+        X : array of shape (n_observations, n_features)
+
+        map_labels : array of shape (n_observations, )
+            MAP partition.
+
+        map_params : dict of size n_components
+            MAP parameters.
+
+        Returns
+        -------
+        labels : array of shape (n_observations, )
+            Predicted partition.
+
+        """
+        
+        clusters_probas = self._map_predict_proba(X, map_params, map_labels)
+        map_locs = map_params['locs']
+   
+        n_components = len(map_locs)
+        set_map_labels = np.empty(n_components, dtype=int)
+
+        for i, (key, _) in enumerate(map_locs.items()):
+            set_map_labels[i] = key
+
+        return set_map_labels[np.argmax(clusters_probas, axis=0)]
+    
 
     def _log_posterior_eval(self):
         """Evaluate the log posterior.
