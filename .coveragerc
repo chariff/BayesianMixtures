@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = InfiniteSkewtMixtures
+source = BayesianMixtures
 
 [report]
 exclude_lines =
