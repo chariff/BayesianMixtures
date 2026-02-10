@@ -70,7 +70,7 @@ burn_in = 500
 ```
 Instantiate a BayesianGaussianMixture object with default parameters.
 ```python
-cls = BayesianGaussianMixture(max_iter=max_iter, burn_in=burn_in  max_components=100,
+cls = BayesianGaussianMixture(max_iter=max_iter, burn_in=burn_in,  max_components=100,
                            verbose=2, verbose_interval=500,  n_components_init=100,
                            random_state=2026, init_params='kmeans')
 ```
@@ -120,11 +120,20 @@ an approach.  -->
 
 Log posterior trace.
 ```python
-plt.plot(p.logposteriors,  linewidth=.6, c='black')
-plt.title('Log posterior trace')
-plt.xlabel('mcmc iterations')
-plt.ylabel('Log posterior evaluation')
-plt.show()
+with plt.style.context('bmh'):
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    ax1, ax2 = axes.ravel()
+    ax1.plot(p.logposteriors, linewidth=1, c='black')
+    ax1.set_title('trace')
+    ax1.set_xlabel('mcmc iterations')
+    ax1.set_ylabel('Log posterior evaluation')
+    
+    ax2.plot(p.logposteriors[burn_in:], linewidth=.6, c='black')
+
+    ax2.set_title('sampling trace')
+    ax2.set_xlabel('mcmc iterations')
+    
+    plt.show()
 ```
 ![Log posterior trace](https://github.com/chariff/BayesianMixtures/raw/master/examples/trace_0.png)
 
